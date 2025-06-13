@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { MessageSquare, Send, FileSignature, Wallet } from "lucide-react";
 import { WalletCard } from "@/components/walletCard";
 import { ActionButton } from "@/components/actionButton";
@@ -8,7 +8,12 @@ import { SignMessageModal } from "@/components/modals/signMessageModal";
 import { SignTransactionModal } from "@/components/modals/signTransactionModal";
 import { SendTransactionModal } from "@/components/modals/sendTransactionModal";
 import { Badge } from "@/components/ui/badge";
-import { usePrivy, useSolanaWallets } from "@privy-io/react-auth";
+import {
+  SolanaTransactionReceipt,
+  SupportedSolanaTransaction,
+  usePrivy,
+  useSolanaWallets,
+} from "@privy-io/react-auth";
 import {
   useSendTransaction,
   useSignMessage,
@@ -49,15 +54,16 @@ export default function Dashboard() {
   const handleSignMessage = async (wallet: WalletAccount, message: string) => {
     console.log(`Signing message "${message}" with wallet:`, wallet.address);
     const encodedMessage = new TextEncoder().encode(message);
-    // const foundWallet = wallets.find((v) => v.address === wallet.address);
-    // let result: Uint8Array;
 
-    // if (foundWallet && foundWallet.connectorType !== "embedded") {
-    //   result = await foundWallet.signMessage(encodedMessage);
-    //   return console.log("Message signed:", result);
-    // }
+    let result: Uint8Array;
+    const foundWallet = wallets.find((v) => v.address === wallet.address);
 
-    const result = await signMessage({
+    if (foundWallet && foundWallet.connectorType !== "embedded") {
+      result = await foundWallet.signMessage(encodedMessage);
+      return console.log("Message signed:", result);
+    }
+
+    result = await signMessage({
       message: encodedMessage,
       options: { address: wallet.address },
     });
@@ -75,7 +81,7 @@ export default function Dashboard() {
     const transferInstruction = SystemProgram.transfer({
       fromPubkey: new PublicKey(wallet.address),
       toPubkey: new PublicKey(to),
-      lamports: LAMPORTS_PER_SOL,
+      lamports: 0.1 * LAMPORTS_PER_SOL, // Send 0.1 SOL for example
     });
 
     // Create transaction
@@ -86,8 +92,16 @@ export default function Dashboard() {
     transaction.recentBlockhash = blockhash;
     transaction.feePayer = new PublicKey(wallet.address);
 
+    let signedTransaction: Transaction | SupportedSolanaTransaction;
+    const foundWallet = wallets.find((v) => v.address === wallet.address);
+
+    if (foundWallet && foundWallet.connectorType !== "embedded") {
+      signedTransaction = await foundWallet.signTransaction(transaction);
+      return console.log("Transaction signed:", signedTransaction);
+    }
+
     // Sign the transaction
-    const signedTransaction = await signTransaction({
+    signedTransaction = await signTransaction({
       transaction,
       address: wallet.address,
       connection: connection,
@@ -122,7 +136,15 @@ export default function Dashboard() {
     ).blockhash;
     transaction.feePayer = new PublicKey(wallet.address);
 
-    const result = await sendTransaction({
+    let result: string | SolanaTransactionReceipt;
+    const foundWallet = wallets.find((v) => v.address === wallet.address);
+
+    if (foundWallet && foundWallet.connectorType !== "embedded") {
+      result = await foundWallet.sendTransaction(transaction, connection);
+      return console.log("Transaction sent:", result);
+    }
+
+    result = await sendTransaction({
       transaction,
       address: wallet.address,
       connection: connection,

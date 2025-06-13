@@ -15,8 +15,7 @@ export default async function Home() {
     );
 
     try {
-      const claims = await client.verifyAuthToken(privyAuthToken.value);
-      console.log(claims);
+      await client.verifyAuthToken(privyAuthToken.value);
       redirect("/dashboard", RedirectType.replace);
     } catch (e) {
       console.error(e);

@@ -47,7 +47,7 @@ export function SignTransactionModal({
           label="Message"
           value={to}
           onChange={(e) => setTo(e.target.value)}
-          placeholder="Enter address you'd like to send 1 SOL to"
+          placeholder="Enter address you'd like to send 0.1 SOL to"
         />
         <Button
           onClick={handleSign}
