@@ -18,6 +18,7 @@ export default async function Home() {
 			await client.verifyAuthToken(privyAuthToken.value);
 			redirect("/dashboard", RedirectType.replace);
 		} catch (e) {
+			// Do something else
 			console.error(e);
 		}
 	}
